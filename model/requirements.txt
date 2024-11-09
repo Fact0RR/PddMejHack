@@ -3,3 +3,4 @@ opencv-python
 ultralytics
 python-dotenv
 websocket-client
+minio

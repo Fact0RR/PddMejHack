@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"server/handlers/xlsx"
 	"server/settings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
@@ -76,33 +80,13 @@ func (h Handler) Upload(c *gin.Context) {
 	})
 }
 
-func (h Handler) Stream(c *gin.Context) {
-	rawURL := c.Query("url")
-	if rawURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "url parameter is required"})
-		return
-	}
-	rawKey := c.Query("key")
-	if rawURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "key parameter is required"})
-		return
-	}
-
-	// Кодируем URL
-	encodedURL := url.QueryEscape(rawURL)
-	encodedKEY := url.QueryEscape(rawKey)
-	proxyURL := h.settings.Model.Endpoint + "/video_feed?url=" + encodedURL + "&key=" + encodedKEY
-
-	proxyGet(c, proxyURL, "multipart/x-mixed-replace; boundary=frame")
-}
-
-func proxyGet(c *gin.Context, proxyURL string, contentType string) {
+func proxyGet(c *gin.Context, proxyURL string, contentType string) []byte{
 	// Выполняем GET-запрос
 	resp, err := http.Get(proxyURL)
 	if err != nil {
 		println("Ошибка при отправки GET запроса: ", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to receive response from source"})
-		return
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -110,36 +94,22 @@ func proxyGet(c *gin.Context, proxyURL string, contentType string) {
 	if resp.StatusCode != http.StatusOK {
 		println("Статус: ", resp.StatusCode)
 		c.JSON(resp.StatusCode, gin.H{"error": "failed to get video feed"})
-		return
+		return nil
 	}
 
-	// Устанавливаем заголовок Content-Type для ответов с видео-потоком
-	c.Header("Content-Type", contentType)
-
-	// Копируем тело ответа от сервиса клиенту
-	_, err = io.Copy(c.Writer, resp.Body)
+	 // Читаем тело ответа
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		println("Ошибка при копировании тела запроса: ", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stream video"})
-		return
-	}
-}
-
-func (h Handler) Image(c *gin.Context) {
-	rawURL := c.Query("url")
-	if rawURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "url parameter is required"})
-		return
+		 println("Ошибка при чтении тела ответа: ", err.Error())
+		 c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read response body"})
+		 return nil
 	}
 
-	// Кодируем URL
-	encodedURL := url.QueryEscape(rawURL)
-	proxyURL := h.settings.Model.Endpoint + "/image?url=" + encodedURL
-
-	proxyGet(c, proxyURL, "image/jpeg")
+	return body
 }
 
-func (h Handler) Rtsp(c *gin.Context) {
+
+func (h Handler) Data(c *gin.Context) {
 	rawURL := c.Query("url")
 	if rawURL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "url parameter is required"})
@@ -154,6 +124,46 @@ func (h Handler) Rtsp(c *gin.Context) {
 	// Кодируем URL
 	encodedURL := url.QueryEscape(rawURL)
 	encodedKEY := url.QueryEscape(rawKey)
-	proxyURL := h.settings.Model.Endpoint + "/rtsp_feed?url=" + encodedURL + "&key=" + encodedKEY
-	proxyGet(c, proxyURL, "multipart/x-mixed-replace; boundary=frame")
+	proxyURL := h.settings.Model.Endpoint + "/data?url=" + encodedURL + "&key=" + encodedKEY
+	body := proxyGet(c,proxyURL,"application/json")
+	var data xlsx.Result
+    err := json.Unmarshal(body, &data)
+    if err != nil {
+        println("Ошибка при парсинге JSON: ", err.Error())
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse response body"})
+        return
+    }
+
+	xlsxFile, err :=xlsx.GenerateXLSX(data)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate xlsx"})
+        return
+	}
+
+	urlxlsx, err := uploadToMinIO(c,h,xlsxFile)
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload xlsx to s3"})
+        return
+	}
+	data.XlsxURL = urlxlsx
+
+	c.JSON(http.StatusOK,data)
+}
+
+
+func uploadToMinIO(c *gin.Context, h Handler, body *bytes.Buffer) (string, error) {
+
+	currentTime := time.Now()
+    formattedTime := currentTime.Format("20060102150405")
+
+   	// Загрузка файла в MinIO
+	_, err := h.minio.PutObject(c, h.settings.Minio.BucketName, formattedTime, body, int64(body.Len()), minio.PutObjectOptions{
+		ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	})
+	if err != nil {
+		println(http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to MinIO: %s", err.Error()))
+		return "",err
+	}
+
+    return fmt.Sprintf("http://%s/%s/%s", h.settings.Minio.Endpoint, h.settings.Minio.BucketName, formattedTime), nil
 }

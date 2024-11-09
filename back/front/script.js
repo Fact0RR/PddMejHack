@@ -161,11 +161,27 @@ async function uploadFile() {
         // Проверяем тип файла
         const type = file.type;
         if (type.startsWith('video/')) {
-            outputImage.src = '/stream?url='+file.name+'&key='+GlobalKey; // Замените на адрес вашего изображения
-            outputImage.style.display = 'block'; // Показываем изображение
-        } else if (type.startsWith('image/')) {
-            outputImage.src = '/image?url='+file.name;
-            outputImage.style.display = 'block'; // Показываем изображение
+            console.log("video")
+            url = '/data?url='+file.name+'&key='+GlobalKey; // Замените на адрес вашего изображения
+            fetch(url, {
+                method: 'GET', // Или 'POST' в зависимости от вашего API
+                headers: {
+                    'Content-Type': 'application/json' // Установите в случае необходимости
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json(); // Преобразуем ответ в JSON
+            })
+            .then(data => {
+                console.log('Ответ от сервера:', data); // Выводим данные в консоль
+                generateTable(data)
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке запроса:', error); // Обрабатываем ошибки
+            });
         } else {
             alert('Выбранный файл не является видео или изображением.');
             return
@@ -180,6 +196,48 @@ async function uploadFile() {
         console.error('Ошибка:', error);
         alert('Произошла ошибка при загрузке.');
     });
+}
+
+function generateTable(data) {
+    const tableContainer = document.getElementById('tableContainer');
+    const table = document.createElement('table');
+    table.className = 'table';
+
+    // Заголовок таблицы
+    const header = table.createTHead();
+    const headerRow = header.insertRow();
+    const th1 = document.createElement('th');
+    th1.innerText = 'Описание';
+    const th2 = document.createElement('th');
+    th2.innerText = 'Ссылка';
+    headerRow.appendChild(th1);
+    headerRow.appendChild(th2);
+
+    // Первая строка таблицы для видео
+    const row1 = table.insertRow();
+    const cell1a = row1.insertCell(0);
+    cell1a.innerText = 'Обработанное видео';
+    const cell1b = row1.insertCell(1);
+    const videoLink = document.createElement('a');
+    videoLink.href = data.video_url;
+    videoLink.innerText = 'посмотреть ->';
+    videoLink.target = '_blank'; // Открываем ссылку в новой вкладке
+    cell1b.appendChild(videoLink);
+
+    // Вторая строка таблицы для Excel файла
+    const row2 = table.insertRow();
+    const cell2a = row2.insertCell(0);
+    cell2a.innerText = 'Excel файл';
+    const cell2b = row2.insertCell(1);
+    const excelLink = document.createElement('a');
+    excelLink.href = data.xlsx_url;
+    excelLink.innerText = 'скачать ->';
+    //excelLink.target = '_blank'; // Открываем ссылку в новой вкладке
+    cell2b.appendChild(excelLink);
+
+    // Добавляем таблицу в контейнер
+    tableContainer.innerHTML = ''; // Очищаем контейнер перед добавлением
+    tableContainer.appendChild(table);
 }
 
 document.getElementById('rtspButton').addEventListener('click', async () => {

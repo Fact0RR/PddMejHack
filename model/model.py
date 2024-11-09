@@ -10,6 +10,8 @@ from ultralytics import YOLO
 import os
 from dotenv import load_dotenv
 import websocket
+from minio import Minio
+from minio.error import S3Error
 
 # Загружаем переменные окружения из файла .env
 load_dotenv()
@@ -18,9 +20,52 @@ load_dotenv()
 s3 = os.getenv('ENDPOINT', 'http://minio:9000/test-bucket/')  # Значение по умолчанию
 ws_url = os.getenv('WEBSOCKET', 'ws://server:8080/ws?type=1')
 
+
 app = Flask(__name__)
 #model = YOLO('yolov8n.pt')
 
+data = {
+    "video_url": "http://127.0.0.1:9000/test-bucket/2summerday.mov",
+    "xlsx_url": "https://example.com/file.xlsx",
+    "crimes": [
+        {   
+            "video_name":"v1.mp4",
+            "name_of_crime": "Превышение скорости",
+            "amount_of_fine": 2500,
+            "time_of_fine": "300"
+        },
+        {
+            "video_name":"v2.mp4",
+            "name_of_crime": "Проезд на красный свет",
+            "amount_of_fine": 5000,
+            "time_of_fine": "123"
+        },
+        {
+            "video_name":"v3.mp4",
+            "name_of_crime": "Парковка в неположенном месте",
+            "amount_of_fine": 3000,
+            "time_of_fine": "321"
+        },
+        {   
+            "video_name":"v4.mp4",
+            "name_of_crime": "Непристегнутый ремень безопасности",
+            "amount_of_fine": 1500,
+            "time_of_fine": "441"
+        },
+        {
+            "video_name":"v5.mp4",
+            "name_of_crime": "Управление без прав",
+            "amount_of_fine": 10000,
+            "time_of_fine": "234"
+        },
+        {
+            "video_name":"v6.mp4",
+            "name_of_crime": "Вождение в состоянии алкогольного опьянения",
+            "amount_of_fine": 25000,
+            "time_of_fine": "6522"
+        }
+    ]
+}
 
 def gen_video(urlNameFile,key_websocket,rtsp):
     if rtsp:
@@ -31,42 +76,34 @@ def gen_video(urlNameFile,key_websocket,rtsp):
     ws = websocket.create_connection(ws_url+'&key='+key_websocket)
     cap = cv2.VideoCapture(url)
     i = 0
-    framePerSecond = 0
-    past_time = 0
-    frameN = 0
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # Создание клиента MinIO
+    client = Minio(
+        os.getenv('S3URL', 'minio:9000/'),
+        access_key="minio-user",
+        secret_key="minio-password",
+        secure=False,  # или True, если вы используете HTTPS
+    )
+    # Получение размера файла
+    sizeString = ""
+    try:
+        stat = client.stat_object("test-bucket", urlNameFile)
+        sizeString = str(round(stat.size/(1024.0 * 1024.0),2))+" МБ"
+    except S3Error as e:
+        sizeString = "Ошибка при подключении к S3"
+        print(e)
+    
     while True:
         i += 1
-        # Преобразуем текущее время в количество секунд с начала эпохи
-        current_time_seconds = int(time.time())
-        if current_time_seconds != past_time:
-            framePerSecond = frameN
-            frameN = 0
-            past_time = current_time_seconds
-        else:
-            frameN = frameN+1
 
-        start_time = time.time()
         ret, frame = cap.read()
         if not ret:
             break
         else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                break
-            
-            frame_bytes = buffer.tobytes()
-            
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-            end_time = time.time()
-
-            # Вычисляем время выполнения
-            execution_time = end_time - start_time
-            
-            
             current_time = datetime.datetime.now().time()
             t = f"{current_time.hour}:{current_time.minute}:{current_time.second}"
-            mess = json.dumps({"Номер кадра":i,"Время": t,"Количество обработанных кадров в секунду":int(1/execution_time),"Итоговое количество кадров в секунду":int(framePerSecond)})
+            percent = (i / frame_count) * 100
+            mess = json.dumps({"Название файла":urlNameFile,"Номер кадра":i,"Обработано %":round(percent, 1),"Размер файла":sizeString})
             ws.send(mess)
             # Отправляем mess в WebSocket
             # Закрываем соединение WebSocket
@@ -101,17 +138,12 @@ def get_image():
 
     return send_file(byte_img, mimetype='image/jpeg')  # Возвращаем изображение в байтах
 
-@app.route('/rtsp_feed', methods=['GET'])
-def rtsp_feed(): 
+@app.route('/data', methods=['GET'])
+def get_data():
     url_name_file = request.args.get('url')
     key_websocket = request.args.get('key')
-    return Response(gen_video(url_name_file,key_websocket,rtsp=True), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/video_feed', methods=['GET'])
-def video_feed():
-    url_name_file = request.args.get('url')
-    key_websocket = request.args.get('key')
-    return Response(gen_video(url_name_file,key_websocket,rtsp=False), mimetype='multipart/x-mixed-replace; boundary=frame')
+    gen_video(url_name_file,key_websocket,rtsp=False)
+    return jsonify(data) 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

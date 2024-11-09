@@ -9,16 +9,17 @@
 <body>
 
 <div class="upload-container">
-    <h2>Загрузите видео или изображение</h2>
+    <h2>Загрузите видео или .zip архив с набором видео</h2>
     <form id="videoUploadForm">
-        <input type="file" accept="video/*,image/*" name="video" id="video" required>
-        <button id="uploadButton" type="submit">Загрузить видео/фото</button>
-
-        <div class="container">
-          <input type="text" placeholder="Введите текст" id="urlRTSP">
-          <button class="purple-button" id="rtspButton">RTSP</button>
-      </div>
+        <input type="file" accept="video/*" name="video" id="video" required>
+        <button id="uploadButton" type="submit">Загрузить видео</button>
     </form>
+    <form id="zipUploadForm"></form>
+      <div class="zip container">
+        <input type="file" accept=".zip" name="zip" id="zip" required>
+        <button class="purple-button" id="rtspButton">.ZIP</button>
+      </div>
+  </form>
     <div class="message" id="message"></div>
 </div>
 
@@ -41,6 +42,8 @@
         </tbody>
       </table>
 </div>
+
+<div id="tableContainer"></div>
 
 <script src="script.js"></script>
 </body>
