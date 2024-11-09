@@ -165,5 +165,5 @@ func uploadToMinIO(c *gin.Context, h Handler, body *bytes.Buffer) (string, error
 		return "",err
 	}
 
-    return fmt.Sprintf("http://%s/%s/%s", h.settings.Minio.Endpoint, h.settings.Minio.BucketName, formattedTime), nil
+    return fmt.Sprintf("http://%s/%s/%s", "127.0.0.1:9000", h.settings.Minio.BucketName, formattedTime), nil
 }
