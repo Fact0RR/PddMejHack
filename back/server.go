@@ -35,7 +35,9 @@ func main() {
 	//Добавляем маршруты для домашней страницы и для подключения
 	r.GET("/", homeHandler.Home)
 	r.POST("/upload", homeHandler.Upload)
+	r.POST("/uploadzip",homeHandler.UploadZIPs)
 	r.GET("/data", homeHandler.Data)
+	r.POST("/datazip",homeHandler.DataZip)
 	r.GET("/ws", handlers.WS)
 	//Запускаем сервер на потру 8080
 	r.Run(":8080")

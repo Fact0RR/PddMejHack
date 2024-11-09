@@ -126,9 +126,9 @@ document.getElementById('videoUploadForm').addEventListener('submit', function(e
 
     // Здесь вы можете добавить код для отправки видео на сервер (например, с использованием Fetch API)
 
-    // Для примера, просто показываем сообщение о успешной загрузке
-    message.textContent = 'Видео успешно загружено!';
-    message.style.color = 'green';
+    // // Для примера, просто показываем сообщение о успешной загрузке
+    // message.textContent = 'Видео успешно загружено!';
+    // message.style.color = 'green';
 
 });
 
@@ -138,6 +138,7 @@ async function uploadFile() {
     const fileInput = document.getElementById('video');
     const file = fileInput.files[0];
     const outputImage = document.getElementById('outputImage');
+    const message = document.getElementById('message');
 
     if (!file) {
         alert('Пожалуйста, выберите файл для загрузки.');
@@ -159,6 +160,8 @@ async function uploadFile() {
     })
     .then(data => {
         // Проверяем тип файла
+        message.textContent = 'Видео успешно загружено!';
+        message.style.color = 'green';
         const type = file.type;
         if (type.startsWith('video/')) {
             console.log("video")
@@ -240,22 +243,60 @@ function generateTable(data) {
     tableContainer.appendChild(table);
 }
 
-document.getElementById('rtspButton').addEventListener('click', async () => {
-    const urlRTSP = document.getElementById('urlRTSP').value;
-    const outputImage = document.getElementById('outputImage');
+document.getElementById('zipuploadButton').addEventListener('click', uploadZipFile);
 
-    // Проверка на пустое текстовое поле
-    if (!urlRTSP) {
-        alert('Пожалуйста, введите RTSP URL.');
-        return; // Прерываем выполнение функции, если поле пустое
+async function uploadZipFile() {
+    const fileInput = document.getElementById('zip');
+    const file = fileInput.files[0];
+    const message = document.getElementById('message');
+
+    if (!file) {
+        alert('Пожалуйста, выберите файл для загрузки.');
+        return;
     }
 
-    // Формируем URL с параметрами
-    const endpoint = `/rtsp?key=${encodeURIComponent(GlobalKey)}`+`&url=${encodeURIComponent(urlRTSP)}`;
-    console.log(endpoint)
-    outputImage.src = endpoint
-    outputImage.style.display = 'block'; // Показываем изображение
-    outputImage.onload = function() { // Ждём загрузку изображения
-        outputImage.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-});
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/uploadzip', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка при загрузке файла.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Проверяем тип файла
+        message.textContent = 'Файл zip успешно загружен!';
+        message.style.color = '#8e44ad';
+        console.log(data)
+
+        const uploadedFiles = data.uploaded_files; // Массив загруженных файлов
+
+        // Подготавливаем объект для передачи
+        const payload = { files: uploadedFiles };
+    
+        // Отправка нового POST-запроса с JSON
+        return fetch('/datazip?key=' + encodeURIComponent(GlobalKey), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload) // Передаем JSON в body
+        }).then(response => response.json()) // Преобразуем ответ в формат JSON
+        .then(data => {
+            console.log(data); // Выводим результат в консоль
+            generateTable(data)
+        })
+        .catch(error => {
+            console.error('Ошибка:', error); // Обработка ошибок
+        });
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при загрузке.');
+    });
+}

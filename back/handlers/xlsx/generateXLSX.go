@@ -14,8 +14,8 @@ type Result struct {
 		AmountOfFine int       `json:"amount_of_fine"`
 		NameOfCrime  string    `json:"name_of_crime"`
 		TimeOfFine   string `json:"time_of_fine"`
+		VideoURL string `json:"link"`
 	} `json:"crimes"`
-	VideoURL string `json:"video_url"`
 	XlsxURL  string `json:"xlsx_url"`
 }
 
@@ -24,7 +24,7 @@ func GenerateXLSX(data Result) (*bytes.Buffer, error) {
 	sheetName := "Sheet1"
 	f.NewSheet(sheetName)
 
-	headers := []string{"Название видео", "Название нарушения", "Сумма штрафа", "Время нарушения"}
+	headers := []string{"Название видео", "Название нарушения", "Сумма штрафа", "Время нарушения", "Ссылка на обработанное видео"}
 	for i, header := range headers {
 		cell := fmt.Sprintf("%s1", string(rune('A'+i)))
 		f.SetCellValue(sheetName, cell, header)
@@ -35,6 +35,7 @@ func GenerateXLSX(data Result) (*bytes.Buffer, error) {
 		f.SetCellValue(sheetName, fmt.Sprintf("B%d", i+2), crime.NameOfCrime)
 		f.SetCellValue(sheetName, fmt.Sprintf("C%d", i+2), crime.AmountOfFine)
 		f.SetCellValue(sheetName, fmt.Sprintf("D%d", i+2), crime.TimeOfFine)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", i+2), crime.VideoURL)
 	}
 
 	buf := new(bytes.Buffer)
