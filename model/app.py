@@ -71,6 +71,7 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 	fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 	out_fps = fps # ФПС в выходном файле
 	output_video = cv2.VideoWriter(output_video_path, fourcc, out_fps, (width, height))
+	#output_video = cv2.VideoWriter(output_video_path, out_fps, (width, height))
 	color = {False: (0, 0, 255), True: (0, 255, 0)}
 
 	# штрафы
