@@ -7,9 +7,10 @@ ADD ./requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
 RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+
 # Add files
 ADD . .
 
 EXPOSE 5000
 
-ENTRYPOINT ["python3", "model.py"]
+ENTRYPOINT ["python3", "app.py"]
