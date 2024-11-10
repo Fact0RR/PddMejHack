@@ -154,7 +154,7 @@ async function uploadFile() {
     .then(data => {
         // Проверяем тип файла
         message.textContent = 'Видео успешно загружено!';
-        message.style.color = 'green';
+        message.style.color = '#42AAFF';
         const type = file.type;
         if (type.startsWith('video/')) {
             console.log("video")
@@ -196,6 +196,12 @@ async function uploadFile() {
 
 function generateTable(data) {
     const tableContainer = document.getElementById('tableContainer');
+
+    // Очищаем предыдущую таблицу, если она существует
+    while (tableContainer.firstChild) {
+        tableContainer.removeChild(tableContainer.firstChild);
+    }
+
     const table = document.createElement('table');
     table.className = 'table';
 
@@ -257,7 +263,7 @@ async function uploadZipFile() {
     .then(data => {
         // Проверяем тип файла
         message.textContent = 'Файл zip успешно загружен!';
-        message.style.color = '#8e44ad';
+        message.style.color = '#42AAFF';
         console.log(data)
 
         const uploadedFiles = data.uploaded_files; // Массив загруженных файлов

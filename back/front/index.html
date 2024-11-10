@@ -4,13 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма загрузки видео</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+    </style>
+    
 </head>
 <body>
-
+<svg class="line" width=100% height="67" viewBox="0 0 1920 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M130.387 43.4955C143.276 23.3816 149.72 13.3246 154.345 9.42327C159.609 4.98428 161.726 3.82642 168.303 1.78987C174.083 0 182.003 0 197.843 0L857.5 0C857.5 0 766.978 2.54302 755.5 9C748.675 12.8394 742.992 19.3181 738.321 26.7939C723.078 51.1892 715.457 63.3869 710.809 67.3704C705.118 72.249 703.893 72.9277 696.74 75.1695C690.899 77 682.695 77 666.288 77L72 77C72 77 102.162 70.6811 113 63C119.594 58.3264 125.421 51.2452 130.387 43.4955Z" fill="#D72A2C"/>
+    <line x1="104" y1="73.5" x2="7.07244e-09" y2="73.5" stroke="#D72A2C" stroke-width="7"/>
+    <line x1="750.989" y1="4.03021" x2="1920.01" y2="4.03021" stroke="#D72A2C" stroke-width="7"/>
+</svg>
+<div class="info-box">
+  <i class='bx bx-info-circle'></i>
+  Иннтеллектуальная система позволяет с помощью искусственного интеллекта 
+  анализировать видеозаписи для выявления нарушений правил дорожного движения
+</div>
 <div class="upload-container">
     <h2>Загрузите видео или .zip архив с набором видео</h2>
-    <form id="videoUploadForm">
+    <form id="videoUploadForm" class="videoUploadForm">
         <input type="file" accept="video/*" name="video" id="video" required>
         <button id="uploadButton" type="submit">Загрузить видео</button>
     </form>
