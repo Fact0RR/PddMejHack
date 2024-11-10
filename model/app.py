@@ -58,8 +58,7 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 		dict: результат обработки
 	"""
 	url = s3 + urlNameFile
-	output_video_s3 = urlNameFile+'_preccessed_video'
-	output_video_path = output_video_s3+'.mp4'
+	output_video_path = urlNameFile+'_preccessed_video.mp4'
 	skip_frames = 4
 	
 	# Подключение к WebSocket
@@ -94,20 +93,18 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 		sizeString = "Ошибка при подключении к S3"
 		print(e)
 	
-	i = 0
 	crimes = []
-	while True:
-		i += 1
-
+	for i in range(frame_count):
 		# пропуск кадров
-		if (i-1)%skip_frames!=0: continue
+		if (i)%skip_frames!=0: 
+			continue
 
 		ret, frame = cap.read()
 		if not ret:
 			break
 
 		### обработка кадра
-		result = model(frame, verbose=False, conf=0.75, device=0)[0]
+		result = model(frame, verbose=False, conf=0.75)[0]
 		box = result.boxes
 		# прогон изображениям по различным нарушениям
 		solid_line_result = solid_line_crossing(box)
@@ -125,12 +122,12 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 		
 		current_time = datetime.datetime.now().time()
 		t = f"{current_time.hour}:{current_time.minute}:{current_time.second}"
-		percent = (i / frame_count) * 100
+		percent = ((i+1) / frame_count) * 100
 		# Отправляем mess в WebSocket
 		if current == 0:
-			mess = json.dumps({"Название файла":urlNameFile,"Номер кадра":i,"Обработано %":round(percent, 1),"Размер файла":sizeString})
+			mess = json.dumps({"Название файла":urlNameFile,"Номер кадра":i+1,"Обработано %":round(percent, 1),"Размер файла":sizeString})
 		else:
-			mess = json.dumps({"Название файла":urlNameFile,"Номер кадра":i,"Обработано %":round(percent, 1),"Размер файла":sizeString,"Сколько видео обработанно":str(current)+"/"+str(all)})
+			mess = json.dumps({"Название файла":urlNameFile,"Номер кадра":i+1,"Обработано %":round(percent, 1),"Размер файла":sizeString,"Сколько видео обработанно":str(current)+"/"+str(all)})
 		ws.send(mess)
 
 		# сбор нарушений
@@ -140,7 +137,7 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 				"name_of_crime": "Пересечение сплошной",
 				"amount_of_fine": solid_cross_fine,
 				"time_of_fine": str(i//fps),
-				"link":f"http://127.0.0.1:9000/test-bucket/{output_video_s3}"
+				"link":f"http://127.0.0.1:9000/test-bucket/{output_video_path}"
 			}
 			crimes.append(tmp)
 
@@ -150,7 +147,7 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 				"name_of_crime": "Проезд по полосе для общ. транспорта",
 				"amount_of_fine": public_trafic_fine,
 				"time_of_fine": str(i//fps),
-				"link":f"http://127.0.0.1:9000/test-bucket/{output_video_s3}"
+				"link":f"http://127.0.0.1:9000/test-bucket/{output_video_path}"
 			}
 			crimes.append(tmp)
 
@@ -159,24 +156,27 @@ def gen_video(urlNameFile, key_websocket, current, all) -> list:
 	cap.release()
 	output_video.release()
 
-	client.fput_object('test-bucket', output_video_s3, output_video_path)
+	client.fput_object('test-bucket', output_video_path, output_video_path, content_type='video/mp4')
 	return crimes
 
 
 @app.route('/data', methods=['GET'])
 def get_data():
+	print('video got')
 	url_name_file = request.args.get('url')
 	key_websocket = request.args.get('key')
-	crimes = gen_video(url_name_file,key_websocket,0,0,"")
+	crimes = gen_video(url_name_file,key_websocket,0,0)
 	data = {
 		"xlsx_url": "",
 		"crimes": crimes
 	}
+	print('video proccessed')
 	return jsonify(data) 
 
 
 @app.route('/datazip',methods=['POST'])
 def post_datazip():
+	print('zip got')
 	key_name_file = request.args.get('key')
 	print(key_name_file)
 	body = request.get_json()  # или request.data, в зависимости от формата данных
@@ -191,13 +191,14 @@ def post_datazip():
 	for file in files:
 		i = i+1
 		part_before_slash = file.split('/')[0]
-		crimes = gen_video(file, key_name_file, i, len(files), part_before_slash)
+		crimes = gen_video(file, key_name_file, i, len(files))
 		total_crimes.extend(crimes)
 		print(part_before_slash)  # Здесь можете обрабатывать файлы как вам нужно
 	data = {
 		"xlsx_url": "",
 		"crimes": total_crimes
 	}
+	print('zip proccessed')
 	return jsonify(data), 200
 
 if __name__ == '__main__':

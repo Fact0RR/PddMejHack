@@ -26,7 +26,7 @@ def put_text_on_image(img: np.ndarray, text: str, color: tuple, line: int=0) -> 
 	Returns:
 		np.ndarray: Аннотированное изображение
 	"""
-	position = (10, 30+15*line)  # Координаты (x, y)
+	position = (10, 30+25*line)  # Координаты (x, y)
 
 	# Определяем шрифт, размер, цвет и толщину текста
 	font = cv2.FONT_HERSHEY_COMPLEX
