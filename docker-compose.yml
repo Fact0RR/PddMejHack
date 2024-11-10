@@ -41,6 +41,13 @@ services:
       - minio # Зависимость от Minio для наличия доступа к нему
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   server:
     build:
