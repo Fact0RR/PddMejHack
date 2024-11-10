@@ -4,3 +4,4 @@ ultralytics
 python-dotenv
 websocket-client
 minio
+supervision
