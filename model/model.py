@@ -32,42 +32,42 @@ data = {
             "name_of_crime": "Превышение скорости",
             "amount_of_fine": 2500,
             "time_of_fine": "300",
-            "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
+            "link":"http://127.0.0.1:9000/test-bucket/AKN00071"
         },
         {
-            "video_name":"v2.mp4",
+            "video_name":"v7.mp4",
             "name_of_crime": "Проезд на красный свет",
             "amount_of_fine": 5000,
             "time_of_fine": "123",
             "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
         },
         {
-            "video_name":"v3.mp4",
+            "video_name":"v7.mp4",
             "name_of_crime": "Парковка в неположенном месте",
             "amount_of_fine": 3000,
             "time_of_fine": "321",
             "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
         },
         {   
-            "video_name":"v4.mp4",
+            "video_name":"v3.mp4",
             "name_of_crime": "Непристегнутый ремень безопасности",
             "amount_of_fine": 1500,
             "time_of_fine": "441",
-            "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
+            "link":"http://127.0.0.1:9000/test-bucket/AKN00073"
         },
         {
-            "video_name":"v5.mp4",
+            "video_name":"v3.mp4",
             "name_of_crime": "Управление без прав",
             "amount_of_fine": 10000,
             "time_of_fine": "234",
-            "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
+            "link":"http://127.0.0.1:9000/test-bucket/AKN00073"
         },
         {
-            "video_name":"v6.mp4",
+            "video_name":"v5.mp4",
             "name_of_crime": "Вождение в состоянии алкогольного опьянения",
             "amount_of_fine": 25000,
             "time_of_fine": "6522",
-            "link":"http://127.0.0.1:9000/test-bucket/AKN00077"
+            "link":"http://127.0.0.1:9000/test-bucket/AKN00075"
         }
     ]
 }

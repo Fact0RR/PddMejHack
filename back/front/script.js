@@ -123,13 +123,6 @@ document.getElementById('videoUploadForm').addEventListener('submit', function(e
         message.style.color = 'red';
         return;
     }
-
-    // Здесь вы можете добавить код для отправки видео на сервер (например, с использованием Fetch API)
-
-    // // Для примера, просто показываем сообщение о успешной загрузке
-    // message.textContent = 'Видео успешно загружено!';
-    // message.style.color = 'green';
-
 });
 
 document.getElementById('uploadButton').addEventListener('click', uploadFile);
@@ -207,39 +200,32 @@ function generateTable(data) {
     table.className = 'table';
 
     // Заголовок таблицы
-    const header = table.createTHead();
-    const headerRow = header.insertRow();
-    const th1 = document.createElement('th');
-    th1.innerText = 'Описание';
-    const th2 = document.createElement('th');
-    th2.innerText = 'Ссылка';
-    headerRow.appendChild(th1);
-    headerRow.appendChild(th2);
+    const headerRow = table.insertRow();
+    const headerCell1 = headerRow.insertCell();
+    headerCell1.textContent = 'Excel отчет';
+    const headerCell2 = headerRow.insertCell();
+    const downloadLink = document.createElement('a');
+    downloadLink.href = data.xlsx_url;
+    downloadLink.textContent = 'скачать';
+    headerCell2.appendChild(downloadLink);
 
-    // Первая строка таблицы для видео
-    const row1 = table.insertRow();
-    const cell1a = row1.insertCell(0);
-    cell1a.innerText = 'Обработанное видео';
-    const cell1b = row1.insertCell(1);
-    const videoLink = document.createElement('a');
-    videoLink.href = data.video_url;
-    videoLink.innerText = 'посмотреть ->';
-    videoLink.target = '_blank'; // Открываем ссылку в новой вкладке
-    cell1b.appendChild(videoLink);
+    // Используем Set для уникальных video_name
+    const uniqueVideoNames = new Set(data.crimes.map(crime => crime.video_name));
 
-    // Вторая строка таблицы для Excel файла
-    const row2 = table.insertRow();
-    const cell2a = row2.insertCell(0);
-    cell2a.innerText = 'Excel файл';
-    const cell2b = row2.insertCell(1);
-    const excelLink = document.createElement('a');
-    excelLink.href = data.xlsx_url;
-    excelLink.innerText = 'скачать ->';
-    //excelLink.target = '_blank'; // Открываем ссылку в новой вкладке
-    cell2b.appendChild(excelLink);
+    // Заполнение данными о преступлениях
+    uniqueVideoNames.forEach(video_name => {
+        const row = table.insertRow();
+        const cell1 = row.insertCell();
+        cell1.textContent = video_name;
+        
+        const crime = data.crimes.find(crime => crime.video_name === video_name);
+        const cell2 = row.insertCell();
+        const videoLink = document.createElement('a');
+        videoLink.href = crime.link;
+        videoLink.textContent = 'просмотр';
+        cell2.appendChild(videoLink);
+    });
 
-    // Добавляем таблицу в контейнер
-    tableContainer.innerHTML = ''; // Очищаем контейнер перед добавлением
     tableContainer.appendChild(table);
 }
 
